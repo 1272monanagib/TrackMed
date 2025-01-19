@@ -21,7 +21,8 @@ namespace TrackMed.Controllers.Engineer
             return response.IsSuccess ? Ok(response.Data) : BadRequest(response.ErrorMessage);
         }
 
-        public async Task<ActionResult<LoginEngineerResponseViewModel>> LoginEngineerAsync(LoginEngineerRequestViewModel loginEngineerRequestViewModel)
+        [HttpPost("Login")]
+        public async Task<ActionResult<LoginEngineerResponseViewModel>> LoginEngineerAsync([FromBody]LoginEngineerRequestViewModel loginEngineerRequestViewModel)
         {
             var response = await _engineerAuthenticationService.LoginEngineerAsync(loginEngineerRequestViewModel);
             return response.IsSuccess ? Ok(response.Data) : BadRequest(response.ErrorMessage);

@@ -69,7 +69,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddMvc();
 
-builder.Services.AddOpenApi();
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<TrackMedAppContext>()
     .AddDefaultTokenProviders();
@@ -105,11 +104,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
-app.UseSwagger();
+
+app.UseSwagger(); 
 app.UseSwaggerUI(options =>
 {
     options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");

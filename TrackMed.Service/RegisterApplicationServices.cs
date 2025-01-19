@@ -2,6 +2,9 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using TrackMed.Repository.Context;
+using TrackMed.Service.Interfaces.UserService;
+using TrackMed.Service.Implementations;
+using TrackMed.Service.Interfaces;
 
 namespace TrackMed.Service
 {
@@ -19,8 +22,11 @@ namespace TrackMed.Service
         }
         private static void RegisterServices(IServiceCollection servicesCollection)
         {
-            
-           
+
+            servicesCollection.AddScoped<IUserService, UserService>();
+            servicesCollection.AddScoped<IHospitalAuthenticationService, HospitalAuthenticationService>();
+            servicesCollection.AddScoped<IEngineerAuthenticationService, EngineerAuthenticationService>();
+            servicesCollection.AddScoped<ITokenGenerator, TokenGenerator>();
         }
         private static void RegisterRepositories(IServiceCollection servicesCollection)
         {
