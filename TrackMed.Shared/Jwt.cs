@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TrackMed.Shared
 {
-    public class Jwt
+    public static class Jwt
     {
         public const string Key = "HqI4wKz25Nv9dZ/pxGJlm1vUJlMPqWbKbN+9uKPQO4e4sGxX4aSdRhbGbjsddP1R5JSvUQcndJ+cMv4Tg";
         public const string Issure = "TeamSecure";
