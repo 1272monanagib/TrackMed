@@ -76,29 +76,32 @@ namespace TrackMed.Service.Implementations
         {
             try
             {
-                var userLogin = await _userManager.FindByEmailAsync(loginUserRequestViewModel.Email);
-                if (userLogin is  null)
+                var user = await _userManager.FindByEmailAsync(loginUserRequestViewModel.UserName);
+                if(user is null)
                 {
-                    return new ServiceResponse<LoginUserResponseViewModel>(data: null, "User with this email doesn't exist");
-                }
+                    user = new IdentityUser()
+                    {
+                        UserName = loginUserRequestViewModel.UserName
+                    };
 
-                var passwordValid = await _userManager.CheckPasswordAsync(userLogin, loginUserRequestViewModel.Password);
-                if (!passwordValid)
-                {
-                    return new ServiceResponse<LoginUserResponseViewModel>(data: null, "Failed to Login User");
-                }
+                    var addPasswordResult = await _userManager.CreateAsync(user, loginUserRequestViewModel.Password);
+                    if (!addPasswordResult.Succeeded)
+                    {
+                        return new ServiceResponse<LoginUserResponseViewModel>(data: null, "Failed to Login user");
+                    }
 
-                var isUserInRole = await _userManager.IsInRoleAsync(userLogin, RolesConst.Customer);
-                if (!isUserInRole)
-                {
-                    return new ServiceResponse<LoginUserResponseViewModel>(data: null, "Failed to Login User");
+                    var addRoleResult = await _userManager.AddToRoleAsync(user, RolesConst.Customer);
+                    if (!addRoleResult.Succeeded)
+                    {
+                        return new ServiceResponse<LoginUserResponseViewModel>(data: null, "Failed to Login user");
+                    }
                 }
-
-                var tokenResult = await _tokenGenerator.GenerateTokenAsync(userLogin);
+             
+                var tokenResult = await _tokenGenerator.GenerateTokenAsync(user);
 
                 return new ServiceResponse<LoginUserResponseViewModel>(new LoginUserResponseViewModel()
                 {
-                    UserId = userLogin.Id,
+                    UserId = user.Id,
                     Token = tokenResult.Token,
                     ValidTo = tokenResult.ValidTo,
                 });

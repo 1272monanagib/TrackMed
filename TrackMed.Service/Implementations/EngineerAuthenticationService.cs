@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,6 +32,7 @@ namespace TrackMed.Service.Implementations
                 {
                     return new ServiceResponse<AddEngineerResponseViewModel>(data: null, "Engineer with this email already exists");
                 }
+
 
                 var newEngineer = new IdentityUser()
                 {
@@ -75,29 +77,39 @@ namespace TrackMed.Service.Implementations
         {
             try
             {
-                var engineerLogin = await _userManager.FindByEmailAsync(loginEngineerRequestViewModel.Email);
-                if (engineerLogin is null)
+                var engineer = await _userManager.FindByEmailAsync(loginEngineerRequestViewModel.Email);
+                if (engineer is null)
                 {
-                    return new ServiceResponse<LoginEngineerResponseViewModel>(data: null, "Engineer with this email doesn't exist");
-                }
+                    engineer = new IdentityUser()
+                    {
+                        UserName = loginEngineerRequestViewModel.Email,
+                        Email = loginEngineerRequestViewModel.Email
+                    };
 
-                var passwordValid = await _userManager.CheckPasswordAsync(engineerLogin, loginEngineerRequestViewModel.Password);
-                if (!passwordValid)
-                {
-                    return new ServiceResponse<LoginEngineerResponseViewModel>(data: null, "Failed to Login Engineer");
-                }
+                    var result = await _userManager.CreateAsync(engineer);
+                    if (!result.Succeeded)
+                    {
+                        return new ServiceResponse<LoginEngineerResponseViewModel>(data: null, "Failed to create Engineer");
+                    }
+                    var addPasswordResult = await _userManager.AddPasswordAsync(engineer, loginEngineerRequestViewModel.Password);
+                    if (!addPasswordResult.Succeeded)
+                    {
+                        return new ServiceResponse<LoginEngineerResponseViewModel>(data: null, "Failed to Login Engineer");
+                    }
 
-                var isEngineerInRole = await _userManager.IsInRoleAsync(engineerLogin, RolesConst.Engineer);
-                if (!isEngineerInRole)
-                {
-                    return new ServiceResponse<LoginEngineerResponseViewModel>(data: null, "Failed to Login Engineer");
-                }
+                    var addRoleResult = await _userManager.AddToRoleAsync(engineer, RolesConst.Engineer);
+                    if (!addRoleResult.Succeeded)
+                    {
+                        return new ServiceResponse<LoginEngineerResponseViewModel>(data: null, "Failed to Login Engineer");
+                    }
 
-                var tokenResult = await _tokenGenerator.GenerateTokenAsync(engineerLogin);
+                }
+               
+                var tokenResult = await _tokenGenerator.GenerateTokenAsync(engineer);
 
                 return new ServiceResponse<LoginEngineerResponseViewModel>(new LoginEngineerResponseViewModel()
                 {
-                    UserId = engineerLogin.Id,
+                    UserId = engineer.Id,
                     Token = tokenResult.Token,
                     ValidTo = tokenResult.ValidTo,
                 });

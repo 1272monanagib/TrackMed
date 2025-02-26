@@ -64,6 +64,17 @@ c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     });
 });
 
+builder.Services.AddCors(o =>
+{
+    o.AddPolicy("AllowFrontend",
+        p =>
+        {
+            p.WithOrigins("http://194.163.164.213", "http://localhost:4200")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+        
+        });
+});
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -96,13 +107,13 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.RegisterAppServices(builder.Configuration);
 var app = builder.Build();
+var baseUrl = builder.Configuration["BaseURL"];
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var context = services.GetRequiredService<TrackMedAppContext>();
     await context.Database.MigrateAsync();
 }
-
 
 
 app.UseSwagger(); 
@@ -112,6 +123,16 @@ app.UseSwaggerUI(options =>
     options.RoutePrefix = "swagger";
 });
 app.UseRouting();
+app.UseCors("AllowFrontend");
+app.Use(async (context, next) =>
+{
+    if (context.Request.Method.Equals("OPTIONS", StringComparison.OrdinalIgnoreCase))
+    {
+        context.Response.StatusCode = 200;
+        return;
+    }
+    await next();
+});
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

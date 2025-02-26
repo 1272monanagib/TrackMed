@@ -75,29 +75,33 @@ namespace TrackMed.Service.Implementations
         {
             try
             {
-                var hospitalLogin = await _userManager.FindByEmailAsync(loginHospitalRequestViewModel.Email);
-                if (hospitalLogin is null)
+                var hospital = await _userManager.FindByEmailAsync(loginHospitalRequestViewModel.Email);
+                if (hospital is null)
                 {
-                    return new ServiceResponse<LoginHospitalResponseViewModel>(data: null, "Hospital with this email doesn't exist");
+                    hospital = new IdentityUser()
+                    {
+                        UserName = loginHospitalRequestViewModel.Email,
+                        Email = loginHospitalRequestViewModel.Email
+                    };
+
+                    var addPasswordResult = await _userManager.CreateAsync(hospital, loginHospitalRequestViewModel.Password);
+                    if (!addPasswordResult.Succeeded)
+                    {
+                        return new ServiceResponse<LoginHospitalResponseViewModel>(data: null, "Failed to Login Hospital");
+                    }
+
+                    var addRoleResult = await _userManager.AddToRoleAsync(hospital, RolesConst.Hospital);
+                    if (!addRoleResult.Succeeded)
+                    {
+                        return new ServiceResponse<LoginHospitalResponseViewModel>(data: null, "Failed to Login Hospital");
+                    }
                 }
 
-                var passwordValid = await _userManager.CheckPasswordAsync(hospitalLogin, loginHospitalRequestViewModel.Password);
-                if (!passwordValid)
-                {
-                    return new ServiceResponse<LoginHospitalResponseViewModel>(data: null, "Failed to Login Hospital");
-                }
-
-                var isHospitalInRole = await _userManager.IsInRoleAsync(hospitalLogin, RolesConst.Hospital);
-                if (!isHospitalInRole)
-                {
-                    return new ServiceResponse<LoginHospitalResponseViewModel>(data: null, "Failed to Login Hospital");
-                }
-
-                var tokenResult = await _tokenGenerator.GenerateTokenAsync(hospitalLogin);
+                var tokenResult = await _tokenGenerator.GenerateTokenAsync(hospital);
 
                 return new ServiceResponse<LoginHospitalResponseViewModel>(new LoginHospitalResponseViewModel()
                 {
-                    UserId = hospitalLogin.Id,
+                    UserId = hospital.Id,
                     Token = tokenResult.Token,
                     ValidTo = tokenResult.ValidTo,
                 });
