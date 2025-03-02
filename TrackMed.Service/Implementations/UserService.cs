@@ -27,16 +27,15 @@ namespace TrackMed.Service.Implementations
         {
             try
             {
-                var user = await _userManager.FindByEmailAsync(addUserRequestViewModel.Email);
+                var user = await _userManager.FindByNameAsync(addUserRequestViewModel.UserName);
                 if (user is not null)
                 {
-                    return new ServiceResponse<AddUserResponseViewModel>(data: null, "User with this email already exists");
+                    return new ServiceResponse<AddUserResponseViewModel>(data: null, "User with this username already exists");
                 }
 
                 var newUser = new IdentityUser()
                 {
-                    UserName = addUserRequestViewModel.Email,
-                    Email = addUserRequestViewModel.Email,
+                    UserName = addUserRequestViewModel.UserName,
                     PhoneNumber = addUserRequestViewModel.PhoneNumber,
                 };
 
@@ -76,34 +75,32 @@ namespace TrackMed.Service.Implementations
         {
             try
             {
-                var user = await _userManager.FindByEmailAsync(loginUserRequestViewModel.UserName);
-                if(user is null)
+                var userLogin = await _userManager.FindByNameAsync(loginUserRequestViewModel.UserName);
+                if (userLogin is null)
                 {
-                    user = new IdentityUser()
-                    {
-                        UserName = loginUserRequestViewModel.UserName
-                    };
+                    return new ServiceResponse<LoginUserResponseViewModel>(data: null, errrorMessage: "user with username does not exist ");
 
-                    var addPasswordResult = await _userManager.CreateAsync(user, loginUserRequestViewModel.Password);
-                    if (!addPasswordResult.Succeeded)
-                    {
-                        return new ServiceResponse<LoginUserResponseViewModel>(data: null, "Failed to Login user");
-                    }
-
-                    var addRoleResult = await _userManager.AddToRoleAsync(user, RolesConst.Customer);
-                    if (!addRoleResult.Succeeded)
-                    {
-                        return new ServiceResponse<LoginUserResponseViewModel>(data: null, "Failed to Login user");
-                    }
                 }
-             
-                var tokenResult = await _tokenGenerator.GenerateTokenAsync(user);
 
+                var passwordValid = await _userManager.CheckPasswordAsync(userLogin, loginUserRequestViewModel.Password);
+                if (!passwordValid)
+                {
+                    return new ServiceResponse<LoginUserResponseViewModel>(data: null, errrorMessage: "Failed to login user ");
+                }
+                var isUserInRole = await _userManager.IsInRoleAsync(userLogin, RolesConst.Customer);
+
+
+                if (!isUserInRole)
+                {
+                    return new ServiceResponse<LoginUserResponseViewModel>(data: null, errrorMessage: "Failed to login user");
+                }
+
+                var tokenResult = await _tokenGenerator.GenerateTokenAsync(userLogin);
                 return new ServiceResponse<LoginUserResponseViewModel>(new LoginUserResponseViewModel()
                 {
-                    UserId = user.Id,
+                    UserId = userLogin.Id,
                     Token = tokenResult.Token,
-                    ValidTo = tokenResult.ValidTo,
+                    ValidTo = tokenResult.ValidTo
                 });
             }
             catch (Exception ex)

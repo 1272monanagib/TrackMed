@@ -108,12 +108,12 @@ builder.Services.AddSwaggerGen();
 builder.Services.RegisterAppServices(builder.Configuration);
 var app = builder.Build();
 var baseUrl = builder.Configuration["BaseURL"];
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    var context = services.GetRequiredService<TrackMedAppContext>();
-    await context.Database.MigrateAsync();
-}
+//using (var scope = app.Services.CreateScope())
+//{
+//    var services = scope.ServiceProvider;
+//    var context = services.GetRequiredService<TrackMedAppContext>();
+//    await context.Database.MigrateAsync();
+//}
 
 
 app.UseSwagger(); 

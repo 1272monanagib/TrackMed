@@ -26,16 +26,15 @@ namespace TrackMed.Service.Implementations
         {
             try
             {
-                var hospital = await _userManager.FindByEmailAsync(addHospitalRequestViewModel.Email);
+                var hospital = await _userManager.FindByNameAsync(addHospitalRequestViewModel.UserName);
                 if (hospital is not null)
                 {
-                    return new ServiceResponse<AddHospitalResponseViewModel>(data: null, "Hospital with this email already exists");
+                    return new ServiceResponse<AddHospitalResponseViewModel>(data: null, "Hospital with this username already exists");
                 }
 
                 var newHospital = new IdentityUser()
                 {
-                    UserName = addHospitalRequestViewModel.Email,
-                    Email = addHospitalRequestViewModel.Email,
+                    UserName = addHospitalRequestViewModel.UserName,
                     PhoneNumber = addHospitalRequestViewModel.PhoneNumber,
                 };
 
@@ -75,38 +74,35 @@ namespace TrackMed.Service.Implementations
         {
             try
             {
-                var hospital = await _userManager.FindByEmailAsync(loginHospitalRequestViewModel.Email);
-                if (hospital is null)
+                var userLogin = await _userManager.FindByNameAsync(loginHospitalRequestViewModel.UserName);
+                if (userLogin is null)
                 {
-                    hospital = new IdentityUser()
-                    {
-                        UserName = loginHospitalRequestViewModel.Email,
-                        Email = loginHospitalRequestViewModel.Email
-                    };
+                    return new ServiceResponse<LoginHospitalResponseViewModel>(data: null, errrorMessage: "user with username does not exist ");
 
-                    var addPasswordResult = await _userManager.CreateAsync(hospital, loginHospitalRequestViewModel.Password);
-                    if (!addPasswordResult.Succeeded)
-                    {
-                        return new ServiceResponse<LoginHospitalResponseViewModel>(data: null, "Failed to Login Hospital");
-                    }
-
-                    var addRoleResult = await _userManager.AddToRoleAsync(hospital, RolesConst.Hospital);
-                    if (!addRoleResult.Succeeded)
-                    {
-                        return new ServiceResponse<LoginHospitalResponseViewModel>(data: null, "Failed to Login Hospital");
-                    }
                 }
 
-                var tokenResult = await _tokenGenerator.GenerateTokenAsync(hospital);
+                var passwordValid = await _userManager.CheckPasswordAsync(userLogin, loginHospitalRequestViewModel.Password);
+                if (!passwordValid)
+                {
+                    return new ServiceResponse<LoginHospitalResponseViewModel>(data: null, errrorMessage: "Failed to login user ");
+                }
+                var isUserInRole = await _userManager.IsInRoleAsync(userLogin, RolesConst.Customer);
 
+
+                if (!isUserInRole)
+                {
+                    return new ServiceResponse<LoginHospitalResponseViewModel>(data: null, errrorMessage: "Failed to login user");
+                }
+
+                var tokenResult = await _tokenGenerator.GenerateTokenAsync(userLogin);
                 return new ServiceResponse<LoginHospitalResponseViewModel>(new LoginHospitalResponseViewModel()
                 {
-                    UserId = hospital.Id,
+                    UserId = userLogin.Id,
                     Token = tokenResult.Token,
-                    ValidTo = tokenResult.ValidTo,
+                    ValidTo = tokenResult.ValidTo
                 });
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return new ServiceResponse<LoginHospitalResponseViewModel>(data: null, "Something Went Wrong");
             }

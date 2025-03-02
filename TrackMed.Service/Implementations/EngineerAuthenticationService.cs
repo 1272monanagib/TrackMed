@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using TrackMed.Service.Interfaces;
 using TrackMed.Service.ViewModels;
 using TrackMed.Service.ViewModels.EngineerAuthenticationService;
+using TrackMed.Service.ViewModels.HospitalAuthenticationService;
 using TrackMed.Service.ViewModels.UserService;
 using TrackMed.Shared;
 
@@ -27,17 +28,16 @@ namespace TrackMed.Service.Implementations
         {
             try
             {
-                var engineer = await _userManager.FindByEmailAsync(addEngineerRequestViewModel.Email);
+                var engineer = await _userManager.FindByNameAsync(addEngineerRequestViewModel.UserName);
                 if (engineer is not null)
                 {
-                    return new ServiceResponse<AddEngineerResponseViewModel>(data: null, "Engineer with this email already exists");
+                    return new ServiceResponse<AddEngineerResponseViewModel>(data: null, "Engineer with this username already exists");
                 }
 
 
                 var newEngineer = new IdentityUser()
                 {
-                    UserName = addEngineerRequestViewModel.Email,
-                    Email = addEngineerRequestViewModel.Email,
+                    UserName = addEngineerRequestViewModel.UserName,
                     PhoneNumber = addEngineerRequestViewModel.PhoneNumber,
                 };
 
@@ -77,41 +77,31 @@ namespace TrackMed.Service.Implementations
         {
             try
             {
-                var engineer = await _userManager.FindByEmailAsync(loginEngineerRequestViewModel.Email);
-                if (engineer is null)
+                var userLogin = await _userManager.FindByNameAsync(loginEngineerRequestViewModel.UserName);
+                if (userLogin is null)
                 {
-                    engineer = new IdentityUser()
-                    {
-                        UserName = loginEngineerRequestViewModel.Email,
-                        Email = loginEngineerRequestViewModel.Email
-                    };
-
-                    var result = await _userManager.CreateAsync(engineer);
-                    if (!result.Succeeded)
-                    {
-                        return new ServiceResponse<LoginEngineerResponseViewModel>(data: null, "Failed to create Engineer");
-                    }
-                    var addPasswordResult = await _userManager.AddPasswordAsync(engineer, loginEngineerRequestViewModel.Password);
-                    if (!addPasswordResult.Succeeded)
-                    {
-                        return new ServiceResponse<LoginEngineerResponseViewModel>(data: null, "Failed to Login Engineer");
-                    }
-
-                    var addRoleResult = await _userManager.AddToRoleAsync(engineer, RolesConst.Engineer);
-                    if (!addRoleResult.Succeeded)
-                    {
-                        return new ServiceResponse<LoginEngineerResponseViewModel>(data: null, "Failed to Login Engineer");
-                    }
-
+                    return new ServiceResponse<LoginEngineerResponseViewModel>(data: null, errrorMessage: "user with username does not exist ");
                 }
-               
-                var tokenResult = await _tokenGenerator.GenerateTokenAsync(engineer);
 
+                var passwordValid = await _userManager.CheckPasswordAsync(userLogin, loginEngineerRequestViewModel.Password);
+                if (!passwordValid)
+                {
+                    return new ServiceResponse<LoginEngineerResponseViewModel>(data: null, errrorMessage: "Failed to login user ");
+                }
+                var isUserInRole = await _userManager.IsInRoleAsync(userLogin, RolesConst.Customer);
+
+
+                if (!isUserInRole)
+                {
+                    return new ServiceResponse<LoginEngineerResponseViewModel>(data: null, errrorMessage: "Failed to login user");
+                }
+
+                var tokenResult = await _tokenGenerator.GenerateTokenAsync(userLogin);
                 return new ServiceResponse<LoginEngineerResponseViewModel>(new LoginEngineerResponseViewModel()
                 {
-                    UserId = engineer.Id,
+                    UserId = userLogin.Id,
                     Token = tokenResult.Token,
-                    ValidTo = tokenResult.ValidTo,
+                    ValidTo = tokenResult.ValidTo
                 });
             }
             catch (Exception ex)
