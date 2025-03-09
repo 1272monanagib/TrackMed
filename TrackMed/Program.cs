@@ -63,15 +63,16 @@ c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
         }
     });
 });
-
+string corsPolicyName = "AllowFrontend";
 builder.Services.AddCors(o =>
 {
-    o.AddPolicy("AllowFrontend",
+    o.AddPolicy(corsPolicyName,
         p =>
         {
             p.WithOrigins("http://194.163.164.213", "http://localhost:4200")
             .AllowAnyHeader()
-            .AllowAnyMethod();
+            .AllowAnyMethod()
+            .AllowCredentials();
         
         });
 });
@@ -117,8 +118,8 @@ app.UseSwaggerUI(options =>
     options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
     options.RoutePrefix = "swagger";
 });
+app.UseCors(corsPolicyName);
 app.UseRouting();
-app.UseCors("AllowFrontend");
 app.Use(async (context, next) =>
 {
     if (context.Request.Method.Equals("OPTIONS", StringComparison.OrdinalIgnoreCase))
