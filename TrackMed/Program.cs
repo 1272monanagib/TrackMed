@@ -69,7 +69,7 @@ builder.Services.AddCors(o =>
     o.AddPolicy("AllowFrontend",
         p =>
         {
-            p.WithOrigins("http://194.163.164.213", "http://localhost:5000")
+            p.WithOrigins("http://194.163.164.213", "http://localhost:4200")
             .AllowAnyHeader()
             .AllowAnyMethod();
         
@@ -108,12 +108,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.RegisterAppServices(builder.Configuration);
 var app = builder.Build();
 var baseUrl = builder.Configuration["BaseURL"];
-//using (var scope = app.Services.CreateScope())
-//{
-//    var services = scope.ServiceProvider;
-//    var context = services.GetRequiredService<TrackMedAppContext>();
-//    await context.Database.MigrateAsync();
-//}
+
 
 
 app.UseSwagger(); 
