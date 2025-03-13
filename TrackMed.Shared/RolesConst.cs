@@ -11,5 +11,6 @@ namespace TrackMed.Shared
         public const string Customer = "Customer";
         public const string Hospital = "Hospital";
         public const string Engineer = "Engineer";
+        public const string Admin = "Admin";
     }
 }

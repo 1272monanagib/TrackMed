@@ -4,11 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TrackMed.Service.ViewModels.EngineerAuthenticationService
+namespace TrackMed.Service.ViewModels.AdminAuthenticationService
 {
-    public class LoginEngineerRequestViewModel
+    public class AddAdminRequestViewModel
     {
         public string UserName { get; set; }
         public string Password { get; set; }
+        public string PhoneNumber { get; set; }
     }
 }
